@@ -84,6 +84,7 @@ public class XrayAlerter extends JavaPlugin {
 			conf.setProperty("minLightLevel", 4);
 			conf.setProperty("warnAfter", 6);
 			conf.setProperty("watchMinutes", 10);
+			conf.setProperty("craftIRCtag", "minecraft");
 			
 			int[] oreIDs = new int[5];
 			oreIDs[0] = Material.IRON_ORE.getId();
@@ -170,7 +171,6 @@ public class XrayAlerter extends JavaPlugin {
 	}
 
 	private void reportPlayer(Player player) {
-
 		
 		XRAPlayerData xp = getXRAPlayer(player);
 		int lastWarn = xp.getWarnTime();
@@ -193,7 +193,7 @@ public class XrayAlerter extends JavaPlugin {
 				}
 			}
 
-			if(hasCraftIrc) craftircHandle.sendMessageToTag(org.jibble.pircbot.Colors.RED + ChatColor.stripColor(xmsg), "icecraft");
+			if(hasCraftIrc) craftircHandle.sendMessageToTag(org.jibble.pircbot.Colors.RED + ChatColor.stripColor(xmsg), conf.getString("craftIRCtag", "minecraft"));
 
 		}
 
