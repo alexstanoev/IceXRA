@@ -86,12 +86,13 @@ public class XrayAlerter extends JavaPlugin {
 			conf.setProperty("watchMinutes", 10);
 			conf.setProperty("craftIRCtag", "minecraft");
 			
-			int[] oreIDs = new int[5];
-			oreIDs[0] = Material.IRON_ORE.getId();
-			oreIDs[1] = Material.GOLD_ORE.getId();
-			oreIDs[2] = Material.DIAMOND_ORE.getId();
-			oreIDs[3] = Material.LAPIS_ORE.getId();
-			oreIDs[4] = Material.REDSTONE_ORE.getId();
+			List<Integer> oreIDs = new ArrayList<Integer>();
+			oreIDs.add(Material.IRON_ORE.getId());
+			oreIDs.add(Material.GOLD_ORE.getId());
+			oreIDs.add(Material.DIAMOND_ORE.getId());
+			oreIDs.add(Material.LAPIS_ORE.getId());
+			oreIDs.add(Material.REDSTONE_ORE.getId());
+			
 			conf.setProperty("watchOres", oreIDs);
 			
 			conf.save();
