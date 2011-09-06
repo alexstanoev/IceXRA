@@ -2,12 +2,16 @@ name: IceXRA
 version: 1.0
 main: eu.icecraft.xrayalerter.XrayAlerter
 website: http://alexsoft-bg.com/
-description: Kills xrayers
+description: Effective X-ray logging
 softdepend: [Permissions, CraftIRC]
 authors:
   - illusion9
 commands:
   viewxra:
     description: view log
+    usage: /<command>
+    permission: icexra.warn
+  icexra:
+    description: reload config
     usage: /<command>
     permission: icexra.warn
