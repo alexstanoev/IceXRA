@@ -31,7 +31,7 @@ public class XrayAlerter extends JavaPlugin {
 	private Permissions perm;
 	private CraftIRC craftircHandle;
 	private boolean hasCraftIrc = false;
-	private boolean UseOP = false;
+	private boolean useSP = false;
 	private Configuration log;
 	private Configuration conf;
 	private List<Integer> watchOres;
@@ -53,7 +53,7 @@ public class XrayAlerter extends JavaPlugin {
 			}
 			perm = (Permissions) p;
 		} else {
-			UseOP  = true;
+			useSP  = true;
 		}
 
 		Plugin checkplugin = this.getServer().getPluginManager().getPlugin("CraftIRC");
@@ -70,7 +70,7 @@ public class XrayAlerter extends JavaPlugin {
 
 		XRAPlayerListener plListener = new XRAPlayerListener(this);
 		this.getServer().getPluginManager().registerEvent(Type.PLAYER_QUIT, plListener, Priority.Monitor, this);
-		
+
 		if(!this.getDataFolder().exists()) this.getDataFolder().mkdir();
 		File logFile = new File(this.getDataFolder(), "log.yml");
 		log = new Configuration(logFile);
@@ -85,27 +85,27 @@ public class XrayAlerter extends JavaPlugin {
 			conf.setProperty("warnAfter", 6);
 			conf.setProperty("watchMinutes", 10);
 			conf.setProperty("craftIRCtag", "minecraft");
-			
+
 			List<Integer> oreIDs = new ArrayList<Integer>();
 			oreIDs.add(Material.IRON_ORE.getId());
 			oreIDs.add(Material.GOLD_ORE.getId());
 			oreIDs.add(Material.DIAMOND_ORE.getId());
 			oreIDs.add(Material.LAPIS_ORE.getId());
 			oreIDs.add(Material.REDSTONE_ORE.getId());
-			
+
 			conf.setProperty("watchOres", oreIDs);
-			
+
 			conf.save();
 		}
-		
+
 		log.load();
 		conf.load();
-		
+
 		this.watchOres = conf.getIntList("watchOres", null);
-		
+
 		System.out.println(this.getDescription().getName() + " " + this.getDescription().getVersion() + " was loaded sucessfully!");
 	}
-	
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		boolean hasPerm = false;
@@ -115,11 +115,19 @@ public class XrayAlerter extends JavaPlugin {
 			hasPerm = true;
 		} else if (sender instanceof Player) {
 			Player sending = (Player) sender;
-			if(UseOP) hasPerm = sending.isOp();
+			if(useSP) hasPerm = sending.hasPermission("icexra.warn");
 			else hasPerm = ((Permissions) perm).getHandler().permission(sending, "icexra.warn");
 		}
 
 		if (hasPerm) {
+
+			if(label.equals("icexra")) {
+				conf.load();
+				sender.sendMessage(ChatColor.AQUA + "[IceXRA] Config reloaded.");
+
+				return true;
+			}
+
 			int i = 0;
 			List<String> keys = log.getKeys();
 			for(String pl : keys) {
@@ -139,7 +147,7 @@ public class XrayAlerter extends JavaPlugin {
 		int typeID = block.getTypeId();
 		Player player = event.getPlayer();
 		XRAPlayerData xp = getXRAPlayer(player);
-		
+
 		int lightlevel = 10;
 
 		ArrayList<Block> target = (ArrayList<Block>) player.getLastTwoTargetBlocks(null, 50);
@@ -172,7 +180,7 @@ public class XrayAlerter extends JavaPlugin {
 	}
 
 	private void reportPlayer(Player player) {
-		
+
 		XRAPlayerData xp = getXRAPlayer(player);
 		int lastWarn = xp.getWarnTime();
 
@@ -186,7 +194,7 @@ public class XrayAlerter extends JavaPlugin {
 			for(Player p : this.getServer().getOnlinePlayers()) {
 
 				boolean hasPerm = false;
-				if(UseOP) hasPerm  = p.isOp();
+				if(useSP) hasPerm = p.hasPermission("icexra.warn");
 				else hasPerm = ((Permissions) perm).getHandler().permission(p, "icexra.warn");
 
 				if(hasPerm) {
@@ -212,7 +220,7 @@ public class XrayAlerter extends JavaPlugin {
 	public void onQuit(Player player) {
 		playerData.remove(player.getName());
 	}
-	
+
 	public XRAPlayerData getXRAPlayer(Player player) {
 		if(this.playerData.containsKey(player.getName())) {
 			return this.playerData.get(player.getName());
@@ -220,9 +228,9 @@ public class XrayAlerter extends JavaPlugin {
 			return null;
 		}
 	}
-	
+
 	public class XRAPlayerData {
-		
+
 		private int breakTime = 0;
 		private int blockBroken = 0;
 		private int warned = 0;
@@ -239,34 +247,34 @@ public class XrayAlerter extends JavaPlugin {
 		public void setFirstBreak() {
 			this.breakTime = (int) (System.currentTimeMillis() / 1000L);
 		}
-		
+
 		public int getBlockBroken() {
 			return this.blockBroken;
 		}
-		
+
 		public void incBlockBroken() {
 			this.blockBroken++;
 		}
-		
+
 		public void clearBlockBroken() {
 			this.blockBroken = 0;
 		}
-		
+
 		public void setWarned() {
 			this.warned = (int) (System.currentTimeMillis() / 1000L);
 		}
-		
+
 		public void unsetWarned() {
 			this.warned = 0;
 		}
-		
+
 		public boolean isWarned() {
 			return this.warned > 0;
 		}
-		
+
 		public int getWarnTime() {
 			return this.warned;
 		}
 	}
-	
+
 }
