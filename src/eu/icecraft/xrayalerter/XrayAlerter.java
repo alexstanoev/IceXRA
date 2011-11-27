@@ -123,7 +123,7 @@ public class XrayAlerter extends JavaPlugin {
 				}
 				
 				List<String> keys = log.getKeys();
-				String lastXra = log.getString(keys.get(keys.size()));
+				String lastXra = log.getString(keys.get(keys.size() - 1));
 				lastXra.replaceAll("\\([^)]*\\)", "").trim(); // remove date and time from the log string
 				String[] split = lastXra.split(",");
 				player.sendMessage(ChatColor.AQUA + "[IceXRA] Teleporting to last x-ray alert.");
