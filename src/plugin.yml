@@ -1,17 +1,18 @@
 name: IceXRA
-version: 1.0
+version: 1.1
 main: eu.icecraft.xrayalerter.XrayAlerter
-website: http://alexsoft-bg.com/
+website: http://icecraft-mc.eu
 description: Effective X-ray logging
-softdepend: [Permissions, CraftIRC]
+softdepend: [CraftIRC]
 authors:
   - illusion9
 commands:
   viewxra:
     description: view log
     usage: /<command>
-    permission: icexra.warn
   icexra:
     description: reload config
     usage: /<command>
-    permission: icexra.warn
+  tpxra:
+    description: teleport to last alert
+    usage: /<command>
