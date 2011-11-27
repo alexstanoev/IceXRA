@@ -23,15 +23,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
 import com.ensifera.animosity.craftirc.CraftIRC;
-import com.nijikokun.bukkit.Permissions.Permissions;
 
 public class XrayAlerter extends JavaPlugin {
 
 	public Map<String, XRAPlayerData> playerData = new HashMap<String, XRAPlayerData>();
-	private Permissions perm;
 	private CraftIRC craftircHandle;
 	private boolean hasCraftIrc = false;
-	private boolean useSP = false;
 	private Configuration log;
 	private Configuration conf;
 	private List<Integer> watchOres;
@@ -44,17 +41,6 @@ public class XrayAlerter extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
-
-		Plugin p = this.getServer().getPluginManager().getPlugin("Permissions");
-
-		if (p != null) {
-			if (!this.getServer().getPluginManager().isPluginEnabled(p)) {
-				this.getServer().getPluginManager().enablePlugin(p);
-			}
-			perm = (Permissions) p;
-		} else {
-			useSP  = true;
-		}
 
 		Plugin checkplugin = this.getServer().getPluginManager().getPlugin("CraftIRC");
 		if (checkplugin == null || !checkplugin.isEnabled()) {
@@ -115,8 +101,7 @@ public class XrayAlerter extends JavaPlugin {
 			hasPerm = true;
 		} else if (sender instanceof Player) {
 			Player sending = (Player) sender;
-			if(useSP) hasPerm = sending.hasPermission("icexra.warn");
-			else hasPerm = ((Permissions) perm).getHandler().permission(sending, "icexra.warn");
+			hasPerm = sending.hasPermission("icexra.warn") || sending.isOp();
 		}
 
 		if (hasPerm) {
@@ -124,6 +109,26 @@ public class XrayAlerter extends JavaPlugin {
 			if(label.equals("icexra")) {
 				conf.load();
 				sender.sendMessage(ChatColor.AQUA + "[IceXRA] Config reloaded.");
+
+				return true;
+			}
+
+			if(label.equals("tpxra")) {
+				Player player = null;
+				if (sender instanceof Player) {
+					player = (Player) sender;
+				} else {
+					sender.sendMessage(ChatColor.RED + "[IceXRA] You need to be a player!");
+					return true;
+				}
+				
+				List<String> keys = log.getKeys();
+				String lastXra = log.getString(keys.get(keys.size()));
+				lastXra.replaceAll("\\([^)]*\\)", "").trim(); // remove date and time from the log string
+				String[] split = lastXra.split(",");
+				player.sendMessage(ChatColor.AQUA + "[IceXRA] Teleporting to last x-ray alert.");
+
+				player.teleport(new Location(this.getServer().getWorlds().get(0), Double.parseDouble(split[0]), Double.parseDouble(split[1]), Double.parseDouble(split[2])));
 
 				return true;
 			}
@@ -193,11 +198,7 @@ public class XrayAlerter extends JavaPlugin {
 
 			for(Player p : this.getServer().getOnlinePlayers()) {
 
-				boolean hasPerm = false;
-				if(useSP) hasPerm = p.hasPermission("icexra.warn");
-				else hasPerm = ((Permissions) perm).getHandler().permission(p, "icexra.warn");
-
-				if(hasPerm) {
+				if(p.hasPermission("icexra.warn") || p.isOp()) {
 					p.sendMessage(xmsg);
 				}
 			}
