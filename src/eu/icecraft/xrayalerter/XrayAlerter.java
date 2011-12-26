@@ -22,13 +22,10 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
-import com.ensifera.animosity.craftirc.CraftIRC;
 
 public class XrayAlerter extends JavaPlugin {
 
 	public Map<String, XRAPlayerData> playerData = new HashMap<String, XRAPlayerData>();
-	private CraftIRC craftircHandle;
-	private boolean hasCraftIrc = false;
 	private Configuration log;
 	private Configuration conf;
 	private List<Integer> watchOres;
@@ -41,15 +38,6 @@ public class XrayAlerter extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
-
-		Plugin checkplugin = this.getServer().getPluginManager().getPlugin("CraftIRC");
-		if (checkplugin == null || !checkplugin.isEnabled()) {
-			System.out.println("[IceXRA] CraftIRC not found");
-		} else {
-			System.out.println("[IceXRA] CraftIRC found");
-			craftircHandle = (CraftIRC) checkplugin;
-			hasCraftIrc = true;
-		}
 
 		XRABlockListener listener = new XRABlockListener(this);
 		this.getServer().getPluginManager().registerEvent(Type.BLOCK_BREAK, listener, Priority.Monitor, this);
@@ -70,7 +58,6 @@ public class XrayAlerter extends JavaPlugin {
 			conf.setProperty("minLightLevel", 4);
 			conf.setProperty("warnAfter", 6);
 			conf.setProperty("watchMinutes", 10);
-			conf.setProperty("craftIRCtag", "minecraft");
 
 			List<Integer> oreIDs = new ArrayList<Integer>();
 			oreIDs.add(Material.IRON_ORE.getId());
@@ -202,8 +189,6 @@ public class XrayAlerter extends JavaPlugin {
 					p.sendMessage(xmsg);
 				}
 			}
-
-			if(hasCraftIrc) craftircHandle.sendMessageToTag(org.jibble.pircbot.Colors.RED + ChatColor.stripColor(xmsg), conf.getString("craftIRCtag", "minecraft"));
 
 		}
 
