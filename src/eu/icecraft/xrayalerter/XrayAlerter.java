@@ -180,7 +180,6 @@ public class XrayAlerter extends JavaPlugin {
 			Block block = event.getBlock();
 			int typeID = block.getTypeId();
 			Player player = event.getPlayer();
-			XRAPlayerData xp = getXRAPlayer(player);
 
 			int lightlevel = 10;
 
@@ -190,6 +189,8 @@ public class XrayAlerter extends JavaPlugin {
 			}
 
 			if(player.getLocation().getY() < conf.getInt("minY", 50) && lightlevel <= conf.getInt("minLightLevel", 50) && watchOres.contains(typeID)) {
+
+				XRAPlayerData xp = getXRAPlayer(player);
 
 				if(xp != null) {
 					xp = getXRAPlayer(player);
