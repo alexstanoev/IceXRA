@@ -1,6 +1,7 @@
 package eu.icecraft.xrayalerter;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -13,43 +14,35 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Priority;
-import org.bukkit.event.Event.Type;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
 
+import eu.icecraft.xrayalerter.configCompat.Configuration;
 
 public class XrayAlerter extends JavaPlugin {
 
-	public Map<String, XRAPlayerData> playerData = new HashMap<String, XRAPlayerData>();
-	private Configuration log;
+	private Map<String, XRAPlayerData> playerData = new HashMap<String, XRAPlayerData>();
+	private boolean useLog = true;
+	private BufferedLogger log;
 	private Configuration conf;
 	private List<Integer> watchOres;
 
 	@Override
 	public void onDisable() {
-		log.save();
+		if(useLog) log.disable();
 		System.out.println(this.getDescription().getName() + " " + this.getDescription().getVersion() + " was disabled!");
 	}
 
 	@Override
 	public void onEnable() {
-
-		XRABlockListener listener = new XRABlockListener(this);
-		this.getServer().getPluginManager().registerEvent(Type.BLOCK_BREAK, listener, Priority.Monitor, this);
-
-		XRAPlayerListener plListener = new XRAPlayerListener(this);
-		this.getServer().getPluginManager().registerEvent(Type.PLAYER_QUIT, plListener, Priority.Monitor, this);
+		getServer().getPluginManager().registerEvents(new XRAListener(), this);
 
 		if(!this.getDataFolder().exists()) this.getDataFolder().mkdir();
-		File logFile = new File(this.getDataFolder(), "log.yml");
-		log = new Configuration(logFile);
-		if(!logFile.exists()) log.save();
-		log.load();
 
 		File confFile = new File(this.getDataFolder(), "config.yml");
 		conf = new Configuration(confFile);
@@ -58,6 +51,9 @@ public class XrayAlerter extends JavaPlugin {
 			conf.setProperty("minLightLevel", 4);
 			conf.setProperty("warnAfter", 6);
 			conf.setProperty("watchMinutes", 10);
+
+			conf.setProperty("logToFile", true);
+			conf.setProperty("logBuffer", 5);
 
 			List<Integer> oreIDs = new ArrayList<Integer>();
 			oreIDs.add(Material.IRON_ORE.getId());
@@ -71,8 +67,21 @@ public class XrayAlerter extends JavaPlugin {
 			conf.save();
 		}
 
-		log.load();
 		conf.load();
+
+		useLog = conf.getBoolean("logToFile", true);
+
+		if(useLog) {
+			File logFile = new File(this.getDataFolder(), "log.txt");
+			if(!logFile.exists()) {
+				try {
+					logFile.createNewFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			log = new BufferedLogger(logFile, conf.getInt("logBuffer", 5));
+		}
 
 		this.watchOres = conf.getIntList("watchOres", null);
 
@@ -81,17 +90,9 @@ public class XrayAlerter extends JavaPlugin {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		boolean hasPerm = false;
 		label = command.getName().toLowerCase();
 
-		if (sender instanceof ConsoleCommandSender) {
-			hasPerm = true;
-		} else if (sender instanceof Player) {
-			Player sending = (Player) sender;
-			hasPerm = sending.hasPermission("icexra.warn") || sending.isOp();
-		}
-
-		if (hasPerm) {
+		if (sender.hasPermission("icexra.warn")) {
 
 			if(label.equals("icexra")) {
 				conf.load();
@@ -100,6 +101,7 @@ public class XrayAlerter extends JavaPlugin {
 				return true;
 			}
 
+			/* TODO
 			if(label.equals("tpxra")) {
 				Player player = null;
 				if (sender instanceof Player) {
@@ -108,7 +110,7 @@ public class XrayAlerter extends JavaPlugin {
 					sender.sendMessage(ChatColor.RED + "[IceXRA] You need to be a player!");
 					return true;
 				}
-				
+
 				List<String> keys = log.getKeys();
 				String lastXra = log.getString(keys.get(keys.size() - 1));
 				lastXra.replaceAll("\\([^)]*\\)", "").trim(); // remove date and time from the log string
@@ -127,52 +129,15 @@ public class XrayAlerter extends JavaPlugin {
 				if(keys.size() - i <= 5 || args.length > 0) sender.sendMessage(ChatColor.AQUA + pl + " : " + log.getString(pl));
 			}
 
+			 */
+
 		} else {
 			sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
 		}
 		return true;
 	}
 
-	public void onBreak(BlockBreakEvent event) {
-
-		Block block = event.getBlock();
-		int typeID = block.getTypeId();
-		Player player = event.getPlayer();
-		XRAPlayerData xp = getXRAPlayer(player);
-
-		int lightlevel = 10;
-
-		ArrayList<Block> target = (ArrayList<Block>) player.getLastTwoTargetBlocks(null, 50);
-		if (target.size() >= 2 &&!target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
-			lightlevel = target.get(0).getLightLevel();
-		}
-
-		if(player.getLocation().getY() < conf.getInt("minY", 50) && lightlevel <= conf.getInt("minLightLevel", 50) && this.watchOres.contains(typeID)) {
-
-			if(xp != null) {
-				xp = getXRAPlayer(player);
-
-				if(xp.getBlockBroken() > conf.getInt("warnAfter", 6) && ((int) (System.currentTimeMillis() / 1000L) - xp.getFirstBreak() < conf.getInt("watchMinutes", 10)*60)) {
-					reportPlayer(player);
-
-					xp.clearBlockBroken();
-					xp.setFirstBreak();
-
-				} else {	
-					xp.incBlockBroken();
-				}
-
-			} else {
-				xp = new XRAPlayerData();
-				playerData.put(player.getName(), xp);
-			}
-
-		}
-
-	}
-
 	private void reportPlayer(Player player) {
-
 		XRAPlayerData xp = getXRAPlayer(player);
 		int lastWarn = xp.getWarnTime();
 
@@ -181,30 +146,21 @@ public class XrayAlerter extends JavaPlugin {
 
 			logWarn(player);
 
-			String xmsg = ChatColor.RED + "POSSIBLE XRAY: " + ChatColor.AQUA + player.getName() + " at "+ player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ();
+			String xmsg = ChatColor.RED + "POSSIBLE XRAY: " + ChatColor.AQUA + player.getName() + " at "+ player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ() + " (" + player.getLocation().getWorld().getName()+")";
 
 			for(Player p : this.getServer().getOnlinePlayers()) {
-
-				if(p.hasPermission("icexra.warn") || p.isOp()) {
+				if(p.hasPermission("icexra.warn")) {
 					p.sendMessage(xmsg);
 				}
 			}
-
 		}
-
 	}
 
 	public void logWarn(Player player) {
-
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-		log.setProperty(player.getName(), player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ() + " (" + sdf.format(cal.getTime()) + ")");
-		log.save();
-	}
-
-	public void onQuit(Player player) {
-		playerData.remove(player.getName());
+		log.log(player.getName() + ":" + player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ() + " (at " + player.getLocation().getWorld().getName() + " on " + sdf.format(cal.getTime()) + ")");
 	}
 
 	public XRAPlayerData getXRAPlayer(Player player) {
@@ -212,6 +168,50 @@ public class XrayAlerter extends JavaPlugin {
 			return this.playerData.get(player.getName());
 		} else {
 			return null;
+		}
+	}
+
+	public class XRAListener implements Listener {
+
+		@EventHandler(priority = EventPriority.MONITOR)
+		public void onBlockBreak(BlockBreakEvent event) {
+			if(event.isCancelled()) return;
+
+			Block block = event.getBlock();
+			int typeID = block.getTypeId();
+			Player player = event.getPlayer();
+			XRAPlayerData xp = getXRAPlayer(player);
+
+			int lightlevel = 10;
+
+			ArrayList<Block> target = (ArrayList<Block>) player.getLastTwoTargetBlocks(null, 50);
+			if (target.size() >= 2 &&!target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
+				lightlevel = target.get(0).getLightLevel();
+			}
+
+			if(player.getLocation().getY() < conf.getInt("minY", 50) && lightlevel <= conf.getInt("minLightLevel", 50) && watchOres.contains(typeID)) {
+
+				if(xp != null) {
+					xp = getXRAPlayer(player);
+
+					if(xp.getBlockBroken() > conf.getInt("warnAfter", 6) && ((int) (System.currentTimeMillis() / 1000L) - xp.getFirstBreak() < conf.getInt("watchMinutes", 10)*60)) {
+						reportPlayer(player);
+
+						xp.clearBlockBroken();
+						xp.setFirstBreak();
+					} else {	
+						xp.incBlockBroken();
+					}
+				} else {
+					xp = new XRAPlayerData();
+					playerData.put(player.getName(), xp);
+				}
+			}
+		}
+
+		@EventHandler(priority = EventPriority.MONITOR)
+		public void onPlayerQuit(PlayerQuitEvent event) {
+			playerData.remove(event.getPlayer().getName());
 		}
 	}
 
@@ -262,5 +262,4 @@ public class XrayAlerter extends JavaPlugin {
 			return this.warned;
 		}
 	}
-
 }
