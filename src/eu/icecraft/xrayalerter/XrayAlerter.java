@@ -160,15 +160,11 @@ public class XrayAlerter extends JavaPlugin {
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-		log.log(player.getName() + ":" + player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ() + " (at " + player.getLocation().getWorld().getName() + " on " + sdf.format(cal.getTime()) + ")");
+		log.log(player.getName() + " : " + player.getLocation().getBlockX() + "," + player.getLocation().getBlockY() + "," + player.getLocation().getBlockZ() + " (at " + player.getLocation().getWorld().getName() + " on " + sdf.format(cal.getTime()) + ")");
 	}
 
 	public XRAPlayerData getXRAPlayer(Player player) {
-		if(this.playerData.containsKey(player.getName())) {
-			return this.playerData.get(player.getName());
-		} else {
-			return null;
-		}
+		return this.playerData.get(player.getName());
 	}
 
 	public class XRAListener implements Listener {
@@ -193,8 +189,6 @@ public class XrayAlerter extends JavaPlugin {
 				XRAPlayerData xp = getXRAPlayer(player);
 
 				if(xp != null) {
-					xp = getXRAPlayer(player);
-
 					if(xp.getBlockBroken() > conf.getInt("warnAfter", 6) && ((int) (System.currentTimeMillis() / 1000L) - xp.getFirstBreak() < conf.getInt("watchMinutes", 10)*60)) {
 						reportPlayer(player);
 
