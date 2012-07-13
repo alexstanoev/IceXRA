@@ -1,4 +1,4 @@
-package eu.icecraft.xrayalerter.configCompat;
+package eu.icecraft.icexra.configCompat;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -1,6 +1,6 @@
 name: IceXRA
 version: 2.0
-main: eu.icecraft.xrayalerter.XrayAlerter
+main: eu.icecraft.icexra.IceXRA
 website: http://icecraft-mc.eu
 description: Effective X-ray logging
 authors:

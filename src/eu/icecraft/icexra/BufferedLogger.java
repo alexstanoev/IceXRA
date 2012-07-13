@@ -1,7 +1,7 @@
-package eu.icecraft.xrayalerter;
+package eu.icecraft.icexra;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -38,8 +38,8 @@ public class BufferedLogger {
 
 	public void load(File logPath) {
 		try {
-			theWriter = new PrintWriter(logPath);
-		} catch (FileNotFoundException e) {
+			theWriter = new PrintWriter(new FileWriter(logPath, true));
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

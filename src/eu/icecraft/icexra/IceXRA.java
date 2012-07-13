@@ -1,4 +1,4 @@
-package eu.icecraft.xrayalerter;
+package eu.icecraft.icexra;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,9 +22,9 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import eu.icecraft.xrayalerter.configCompat.Configuration;
+import eu.icecraft.icexra.configCompat.Configuration;
 
-public class XrayAlerter extends JavaPlugin {
+public class IceXRA extends JavaPlugin {
 
 	private Map<String, XRAPlayerData> playerData = new HashMap<String, XRAPlayerData>();
 	private boolean useLog = true;
@@ -80,7 +80,7 @@ public class XrayAlerter extends JavaPlugin {
 					e.printStackTrace();
 				}
 			}
-			log = new BufferedLogger(logFile, conf.getInt("logBuffer", 5));
+			log = new BufferedLogger(logFile, conf.getInt("logBuffer", 2));
 		}
 
 		this.watchOres = conf.getIntList("watchOres", null);
@@ -179,8 +179,15 @@ public class XrayAlerter extends JavaPlugin {
 
 			int lightlevel = 10;
 
-			ArrayList<Block> target = (ArrayList<Block>) player.getLastTwoTargetBlocks(null, 50);
-			if (target.size() >= 2 &&!target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
+			ArrayList<Block> target = null;
+			try {
+				target = (ArrayList<Block>) player.getLastTwoTargetBlocks(null, 50);
+			} catch(Exception e) {
+				System.err.println("[IceXRA] Bukkit derped. Player: "+event.getPlayer().getName()+", block: "+block.toString());
+				return;
+			}
+
+			if (target.size() >= 2 && !target.get(1).getType().equals(Material.matchMaterial("AIR"))) {
 				lightlevel = target.get(0).getLightLevel();
 			}
 
